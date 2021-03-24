@@ -1,0 +1,41 @@
+.container {
+  border: 1px solid black;
+  display: flex;
+  padding-top: 3px;
+}
+
+.text-container {
+  height: 400px;
+  width: 60%;
+  min-width: 400px;
+  overflow: auto;
+  font-family: Consolas;
+  cursor: text;
+  position: relative;
+}
+
+.element {
+  display: inline-block;
+}
+
+.keyword {
+  color: red;
+}
+
+.cursor {
+  position: absolute;
+  background-color: red;
+  width: 2px;
+  height: 18px;
+  cursor: text;
+}
+
+.rowsNums {
+  display: flex;
+  flex-direction: column;
+  color: cadetblue;
+  font-family: Consolas;
+  > span {
+    padding: 0 20px;
+  }
+}
