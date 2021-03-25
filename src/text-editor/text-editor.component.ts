@@ -1,7 +1,13 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { TextSymbol } from '../models/text-symbol';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { SymbolType } from '../models/symbol-type';
-import { Cursor } from 'src/text-editor/cursor';
+import { EditorState } from './editor-state';
 
 @Component({
   selector: 'app-text-editor',
@@ -11,66 +17,23 @@ import { Cursor } from 'src/text-editor/cursor';
 export class TextEditorComponent implements OnInit {
   constructor() {}
 
-  rows: Array<Array<TextSymbol>> = [];
   SymbolType = SymbolType;
-  curSymbol: TextSymbol | undefined;
   fontSize = 14.55;
-  cursor = new Cursor();
+  state: EditorState = new EditorState();
 
-  ngOnInit(): void {
-    this.curSymbol = new TextSymbol(
-      SymbolType.Plain,
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit',
-      0,
-    );
-    this.rows.push([this.curSymbol]);
-    this.rows.push([this.curSymbol]);
-    this.rows.push([this.curSymbol]);
-    this.rows.push([this.curSymbol]);
+  ngOnInit(): void {}
+
+  @HostListener('document:click')
+  clickout() {
+    this.state.clickout();
   }
 
-  textContainerClick(e: Event) {
-    let event = e as MouseEvent;
-    // checking for left-click
-    if (event.button != 0) {
-      return;
-    }
-    const element = event.target as HTMLElement;
-    if (element.className == 'text-container') {
-      const last = this.rows.length - 1;
-      this.cursor.moveToRow(last, this.getRowLength(last));
-    } else if (element.className == 'row') {
-      // const rect = element.getBoundingClientRect();
-      //const col = this.cursor.findColumnIndex(event.clientX - rect.left);
-      const row = this.cursor.findRowIndexByAttribute(element);
-      this.cursor.moveToRow(row, this.getRowLength(row));
-    } else {
-      this.cursor.moveCursor(event.clientX, event.clientY, element);
-    }
-    this.cursor.animate();
-  }
-
-  getRowLength(row: number): number {
-    /// TODO: consider caching length of rows
-    let rowLength = 0;
-    this.rows[row].forEach((symbol) => {
-      rowLength += symbol.text.length;
-    });
-    return rowLength;
-  }
-
-  blur() {
-    console.error('pepega');
-    this.cursor.hide();
-  }
-
+  @HostListener('document:keydown', ['$event'])
   textInput(e: Event) {
-    let event = e as KeyboardEvent;
-    if (event.isComposing) {
-      return;
+    if (this.state.focused) {
+      this.state.keyDown(e as KeyboardEvent);
     }
-
-    console.error(event.key);
+    return !this.state.focused;
   }
 
   getClass(type: SymbolType): string {

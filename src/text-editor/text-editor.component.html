@@ -1,26 +1,21 @@
 <div class="container" [style.font-size.px]="fontSize">
   <div class="rowsNums">
-    <span *ngFor="let r of rows; let i = index">
+    <span *ngFor="let r of state.rows; let i = index">
       {{ i + 1 }}
     </span>
   </div>
-  <div
-    class="text-container"
-    (click)="textContainerClick($event)"
-    (keydown)="textInput($event)"
-    (blur)="blur()"
-  >
-    <div class="row" *ngFor="let row of rows; let i = index" [attr.ind]="i">
+  <div class="text-container" (click)="state.click($event)">
+    <div class="row" *ngFor="let row of state.rows; let i = index" [attr.ind]="i">
       <span *ngFor="let symbol of row">
-        <span [class]="[getClass(symbol.type), 'element']">{{ symbol.text }}</span>
+        <span [class]="[getClass(symbol.type), 'symbol']">{{ symbol.text }}</span>
       </span>
     </div>
     <div
       class="cursor"
       [ngStyle]="{
-        'left.px': cursor.coord[0],
-        'top.px': cursor.coord[1],
-        visibility: cursor.visibility ? 'inherit' : 'hidden'
+        'left.px': state.cursor.coord.x,
+        'top.px': state.cursor.coord.y,
+        visibility: state.cursor.visibility ? 'inherit' : 'hidden'
       }"
     ></div>
   </div>

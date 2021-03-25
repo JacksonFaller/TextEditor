@@ -1,8 +1,14 @@
+import { Coordinates, Position } from './position';
+
 export class Cursor {
-  position = [0, 0];
-  coord = [0, 0];
+  position = new Position(0, 0);
+  coord = new Coordinates(0, 0);
   visibility = false;
   interval: NodeJS.Timeout | undefined;
+
+  // TODO: Calculate these values
+  private symbolWidth = 8;
+  private symbolHeight = 17;
 
   moveCursor(x: number, y: number, element: HTMLElement) {
     const rect = element.getBoundingClientRect();
@@ -11,29 +17,30 @@ export class Cursor {
       return;
     }
     const colInd = this.findColumnIndex(x - rect.left);
-    this.position = [colInd, rowInd];
+    this.position = new Position(colInd, rowInd);
     this.coord = this.getCoord(colInd, rowInd);
     console.error(this.position);
   }
 
   moveToRow(rowInd: number, colInd: number) {
-    this.position = [colInd, rowInd];
+    this.position = new Position(colInd, rowInd);
     this.coord = this.getCoord(colInd, rowInd);
   }
 
-  getCoord(colInd: number, rowInd: number): Array<number> {
-    return [colInd * 8, rowInd * 17];
+  getCoord(colInd: number, rowInd: number): Coordinates {
+    return new Coordinates(colInd * this.symbolWidth, rowInd * this.symbolHeight);
   }
 
   animate() {
     if (this.interval) return;
+    this.visibility = true;
     this.interval = setInterval(() => {
       this.visibility = !this.visibility;
     }, 550);
   }
 
   hide() {
-    if (!this.interval) {
+    if (this.interval) {
       clearInterval(this.interval);
       this.interval = undefined;
     }
@@ -52,8 +59,7 @@ export class Cursor {
     return ind != null ? Number.parseInt(ind) : NaN;
   }
 
-  /// TODO: rewrite this shit to actually calculate column index by creating an element with text and measuring its width
   findColumnIndex(x: number): number {
-    return Math.round(x / 8);
+    return Math.round(x / this.symbolWidth);
   }
 }
