@@ -1,14 +1,16 @@
+import { LinkedList } from 'src/models/linked-list';
 import { SymbolType } from 'src/models/symbol-type';
 import { TextSymbol } from 'src/models/text-symbol';
 import { Cursor } from './cursor';
+import { TextProcessor } from './text-poseccor';
 
 export class EditorState {
   private wasInside = false;
-  rows: Array<Array<TextSymbol>> = [];
+  private textProcessor;
+
+  rows: Array<LinkedList<TextSymbol>> = [];
   cursor = new Cursor();
   curSymbol: TextSymbol;
-  tabWidth = 2;
-  tabAsSpaces = true;
   focused = false;
 
   constructor() {
@@ -17,15 +19,17 @@ export class EditorState {
       'Lorem ipsum dolor sit amet consectetur adipisicing elit',
       0,
     );
-    this.rows.push([Object.create(this.curSymbol)]);
-    this.rows.push([Object.create(this.curSymbol)]);
-    this.rows.push([Object.create(this.curSymbol)]);
-    this.rows.push([Object.create(this.curSymbol)]);
-    this.curSymbol = this.rows[0][0];
+    for (let i = 0; i < 4; i++) {
+      let list = new LinkedList<TextSymbol>();
+      list.append(Object.create(this.curSymbol));
+      this.rows.push(list);
+    }
+    this.curSymbol = this.rows[0].getElementAt(0)?.value || this.curSymbol;
 
     for (let i = 0; i < this.rows.length; i++) {
       this.rows[i].forEach((x) => (x.row = i));
     }
+    this.textProcessor = new TextProcessor(this.cursor, this.rows);
   }
 
   clickout() {
@@ -72,77 +76,30 @@ export class EditorState {
   }
 
   keyDown(event: KeyboardEvent) {
-    const except = new Map([
-      [
-        'ArrowUp',
-        () => {
-          if (this.cursor.position.row == 0) return;
-          // need to check for column too
-          this.cursor.moveToRow(this.cursor.position.row - 1, this.cursor.position.col);
-        },
-      ],
-      [
-        'ArrowDown',
-        () => {
-          if (this.cursor.position.row == this.rows.length - 1) return;
-          // need to check for column too
-          this.cursor.moveToRow(this.cursor.position.row + 1, this.cursor.position.col);
-        },
-      ],
-      [
-        'ArrowLeft',
-        () => {
-          if (this.curSymbol.range.start <= this.cursor.position.col - 1) {
-            this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col - 1);
-          }
-        },
-      ],
-      [
-        'ArrowRight',
-        () => {
-          if (this.curSymbol.range.end >= this.cursor.position.col) {
-            this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col + 1);
-          }
-        },
-      ],
-      [
-        'Backspace',
-        () => {
-          if (this.curSymbol.range.start <= this.cursor.position.col - 1) {
-            this.curSymbol.removeRange(this.cursor.position.col - 1, this.cursor.position.col);
-            this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col - 1);
-          }
-        },
-      ],
-      [
-        'Tab',
-        () => {
-          this.curSymbol.insert(
-            this.cursor.position.col,
-            this.tabAsSpaces ? ' '.repeat(this.tabWidth) : '\t',
-          );
-          this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col + this.tabWidth);
-        },
-      ],
-    ]);
-    const special = except.get(event.key);
-    if (event.isComposing || (event.key.length > 1 && !special)) {
+    console.error(event.key);
+    if (event.isComposing) {
       return;
     }
-
-    if (special) {
-      special();
-    } else {
-      this.curSymbol.insert(this.cursor.position.col, event.key);
-      this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col + 1);
-    }
-    console.error(event.key);
+    this.textProcessor.processInput(event.key, this.curSymbol);
   }
 
   findSymbol(colInd: number, rowInd: number): TextSymbol {
     if (this.curSymbol.row == rowInd && this.curSymbol.withinRange(colInd)) {
       return this.curSymbol;
     }
-    return this.rows[rowInd].find((x) => x.withinRange(colInd)) ?? this.curSymbol;
+    const row = this.rows[rowInd];
+    /* let l = 0,
+      r = row.length - 1;
+    while (l < r) {
+      let mid = Math.floor((l + r) / 2);
+      if (colInd > row[mid].range.end) {
+        l = mid + 1;
+      } else if (colInd < row[mid].range.start) {
+        r = mid - 1;
+      } else {
+        return row[mid];
+      }
+    }*/
+    return this.rows[rowInd].find((x) => colInd <= x.range.end) ?? this.curSymbol;
   }
 }

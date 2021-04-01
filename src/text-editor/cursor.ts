@@ -4,7 +4,7 @@ export class Cursor {
   position = new Position(0, 0);
   coord = new Coordinates(0, 0);
   visibility = false;
-  interval: NodeJS.Timeout | undefined;
+  interval?: NodeJS.Timeout;
 
   // TODO: Calculate these values
   private symbolWidth = 8;
