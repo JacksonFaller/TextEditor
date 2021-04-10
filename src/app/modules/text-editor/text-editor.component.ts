@@ -1,13 +1,6 @@
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  HostListener,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
-import { SymbolType } from '../models/symbol-type';
-import { EditorState } from './editor-state';
+import { Component, HostListener, OnInit } from '@angular/core';
+import { SymbolType } from './enums/symbol-type';
+import { EditorState } from './models/editor-state';
 
 @Component({
   selector: 'app-text-editor',
@@ -37,13 +30,6 @@ export class TextEditorComponent implements OnInit {
   }
 
   getClass(type: SymbolType): string {
-    switch (type) {
-      case SymbolType.Keyword:
-        return 'keyword';
-      case SymbolType.Plain:
-        return 'plain';
-      default:
-        throw `Couldn't find class for a ${type} symbol`;
-    }
+    return SymbolType[type].toLowerCase();
   }
 }

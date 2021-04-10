@@ -8,8 +8,16 @@ export class LinkedList<T> implements Iterable<T> {
   private tail: ListNode<T> | null = null;
   private _length = 0;
 
-  get length() {
+  get length(): number {
     return this._length;
+  }
+
+  get first(): ListNode<T> | null {
+    return this.head;
+  }
+
+  get last(): ListNode<T> | null {
+    return this.tail;
   }
 
   constructor(private equals: EqualityFunction<T> = LinkedList.equals) {}
@@ -22,6 +30,14 @@ export class LinkedList<T> implements Iterable<T> {
     let node = this.head;
     while (node !== null) {
       yield node.value;
+      node = node.next;
+    }
+  }
+
+  *iterator(): IterableIterator<ListNode<T>> {
+    let node = this.head;
+    while (node !== null) {
+      yield node;
       node = node.next;
     }
   }
@@ -89,11 +105,21 @@ export class LinkedList<T> implements Iterable<T> {
   removeAt(index: number) {
     const node = this.getElementAt(index);
     if (node === null) return;
+    this.remove(node);
+  }
+
+  remove(node: ListNode<T>) {
     if (node.prev !== null) {
       node.prev.next = node.next;
     }
     if (node.next !== null) {
       node.next.prev = node.prev;
+    }
+    if (node == this.head) {
+      this.head = node.next;
+    }
+    if (node == this.tail) {
+      this.tail = node.prev;
     }
     this._length--;
   }
@@ -123,7 +149,7 @@ export class LinkedList<T> implements Iterable<T> {
     return this.nodeSearch((x) => this.equals(x, value));
   }
 
-  insertAfter(node: ListNode<T>, element: T) {
+  insertAfter(node: ListNode<T>, element: T): ListNode<T> {
     const newNode = new ListNode(element, node, node.next);
     if (node.next === null) {
       this.tail = newNode;
@@ -132,6 +158,14 @@ export class LinkedList<T> implements Iterable<T> {
     }
     node.next = newNode;
     this._length++;
+    return newNode;
+  }
+
+  insertManyAfter(node: ListNode<T>, elements: Iterable<T>) {
+    let curNode = node;
+    for (let element of elements) {
+      curNode = this.insertAfter(curNode, element);
+    }
   }
 
   insertBefore(node: ListNode<T>, element: T) {

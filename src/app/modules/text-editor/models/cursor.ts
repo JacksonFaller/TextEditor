@@ -1,4 +1,5 @@
-import { Coordinates, Position } from './position';
+import { Coordinates } from './coordinates';
+import { Position } from './position';
 
 export class Cursor {
   position = new Position(0, 0);

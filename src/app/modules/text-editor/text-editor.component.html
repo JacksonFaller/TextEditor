@@ -6,9 +6,9 @@
   </div>
   <div class="text-container" (click)="state.click($event)">
     <div class="row" *ngFor="let row of state.rows; let i = index" [attr.ind]="i">
-      <span *ngFor="let symbol of row">
+      <ng-container *ngFor="let symbol of row">
         <span [class]="[getClass(symbol.type), 'symbol']">{{ symbol.text }}</span>
-      </span>
+      </ng-container>
     </div>
     <div
       class="cursor"
