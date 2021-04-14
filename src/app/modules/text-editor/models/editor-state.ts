@@ -4,6 +4,7 @@ import { SymbolType } from 'src/app/modules/text-editor/enums/symbol-type';
 import { TextSymbol } from 'src/app/modules/text-editor/models/symbol/text-symbol';
 import { Cursor } from './cursor';
 import { TextProcessor } from './text-poseccor';
+import { Container } from './container';
 
 export class EditorState {
   private wasInside = false;
@@ -11,13 +12,20 @@ export class EditorState {
 
   rows: Array<LinkedList<TextSymbol>> = [];
   cursor = new Cursor();
-  curSymbol: PositionedTextSymbol;
+  curSymbolContainer: Container<PositionedTextSymbol>;
+  get curSymbol() {
+    return this.curSymbolContainer.value;
+  }
+
+  set curSymbol(value: PositionedTextSymbol) {
+    this.curSymbolContainer.value = value;
+  }
   focused = false;
 
   constructor() {
     this.textProcessor = new TextProcessor(this.cursor, this.rows);
     this.testData();
-    this.curSymbol = new PositionedTextSymbol(this.rows[0].first!, 0);
+    this.curSymbolContainer = new Container(new PositionedTextSymbol(this.rows[0].first!, 0, 0));
   }
 
   clickout() {
@@ -70,7 +78,7 @@ export class EditorState {
     if (event.isComposing) {
       return;
     }
-    this.textProcessor.processInput(event.key, this.curSymbol);
+    this.textProcessor.processInput(event.key, this.curSymbolContainer);
   }
 
   findSymbol(colInd: number, rowInd: number): PositionedTextSymbol {
@@ -82,14 +90,7 @@ export class EditorState {
       return this.curSymbol;
     }
 
-    let position = 0;
-    for (let el of this.rows[rowInd].iterator()) {
-      if (position + el.value.length > colInd) {
-        return new PositionedTextSymbol(el, position);
-      }
-      position += el.value.length;
-    }
-    throw `Couldn't find current symbol`;
+    return PositionedTextSymbol.fromSymbolAtPosition(this.rows[rowInd].iterator(), colInd, rowInd);
   }
 
   testData() {
@@ -97,13 +98,10 @@ export class EditorState {
     for (let i = 0; i < 4; i++) {
       let list = new LinkedList<TextSymbol>();
       str.split(' ').forEach((x) => {
-        list.append(new TextSymbol(SymbolType.Plain, x, i));
-        list.append(TextSymbol.whitespace(i));
+        list.append(new TextSymbol(SymbolType.Plain, x));
+        list.append(TextSymbol.whitespace);
       });
       this.rows.push(list);
-    }
-    for (let i = 0; i < this.rows.length; i++) {
-      this.rows[i].forEach((x) => (x.row = i));
     }
   }
 }

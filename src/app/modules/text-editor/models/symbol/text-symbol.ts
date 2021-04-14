@@ -1,7 +1,7 @@
 import { SymbolType } from '../../enums/symbol-type';
 
 export class TextSymbol {
-  constructor(public type: SymbolType, public text: string, public row: number) {}
+  constructor(public type: SymbolType, public text: string) {}
 
   public static tabWidth = 2;
   public static tabAsSpaces = true;
@@ -10,12 +10,16 @@ export class TextSymbol {
     return this.text.length;
   }
 
-  static whitespace(row: number): TextSymbol {
-    return new TextSymbol(SymbolType.Whitespace, ' ', row);
+  static get whitespace(): TextSymbol {
+    return new TextSymbol(SymbolType.Whitespace, ' ');
   }
 
-  static tab(row: number): TextSymbol {
-    return new TextSymbol(SymbolType.Tab, this.tabAsSpaces ? ' '.repeat(this.tabWidth) : '\t', row);
+  static get tab(): TextSymbol {
+    return new TextSymbol(SymbolType.Tab, this.tabAsSpaces ? ' '.repeat(this.tabWidth) : '\t');
+  }
+
+  static get empty(): TextSymbol {
+    return new TextSymbol(SymbolType.Empty, '');
   }
 
   removeRange(start: number, end: number) {
@@ -32,8 +36,8 @@ export class TextSymbol {
     }
 
     return {
-      before: new TextSymbol(SymbolType.Plain, this.text.slice(0, index), this.row),
-      after: new TextSymbol(SymbolType.Plain, this.text.slice(index), this.row),
+      before: new TextSymbol(SymbolType.Plain, this.text.slice(0, index)),
+      after: new TextSymbol(SymbolType.Plain, this.text.slice(index)),
     };
   }
 
