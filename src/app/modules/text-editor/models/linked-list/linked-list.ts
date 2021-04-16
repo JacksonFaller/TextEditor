@@ -55,8 +55,13 @@ export class LinkedList<T> implements Iterable<T> {
     return null;
   }
 
-  append(element: T) {
+  append(element: T): ListNode<T> {
     const node = new ListNode(element);
+    this.appendNode(node);
+    return node;
+  }
+
+  appendNode(node: ListNode<T>) {
     if (this.head === null) {
       this.head = node;
     }
@@ -70,9 +75,13 @@ export class LinkedList<T> implements Iterable<T> {
     this._length++;
   }
 
-  prepend(element: T) {
+  prepend(element: T): ListNode<T> {
     const node = new ListNode(element);
+    this.prependNode(node);
+    return node;
+  }
 
+  prependNode(node: ListNode<T>) {
     if (this.head !== null) {
       node.next = this.head;
       this.head.prev = node;
@@ -124,6 +133,30 @@ export class LinkedList<T> implements Iterable<T> {
     this._length--;
   }
 
+  removeAllAfter(node: ListNode<T>): number {
+    let temp = node.next;
+    let count = 0;
+    while (temp !== null) {
+      count++;
+      temp = temp.next;
+    }
+    this._length -= count;
+    if (node.next !== null) {
+      node.next.prev = null;
+    }
+    node.next = null;
+    this.tail = node;
+    return count;
+  }
+
+  splitAfter(node: ListNode<T>): LinkedList<T> {
+    let newList = new LinkedList<T>();
+    newList.tail = this.tail;
+    newList.head = node.next;
+    newList._length = this.removeAllAfter(node);
+    return newList;
+  }
+
   /* eslint-disable @typescript-eslint/no-non-null-assertion */
   getElementAt(index: number): ListNode<T> | null {
     if (index < 0 || index >= this.length) {
@@ -150,15 +183,21 @@ export class LinkedList<T> implements Iterable<T> {
   }
 
   insertAfter(node: ListNode<T>, element: T): ListNode<T> {
-    const newNode = new ListNode(element, node, node.next);
+    const newNode = new ListNode(element);
+    this.insertNodeAfter(node, newNode);
+    return newNode;
+  }
+
+  insertNodeAfter(node: ListNode<T>, newNode: ListNode<T>) {
     if (node.next === null) {
       this.tail = newNode;
     } else {
       node.next.prev = newNode;
     }
+    newNode.prev = node;
+    newNode.next = node.next;
     node.next = newNode;
     this._length++;
-    return newNode;
   }
 
   insertManyAfter(node: ListNode<T>, elements: Iterable<T>) {
@@ -168,8 +207,15 @@ export class LinkedList<T> implements Iterable<T> {
     }
   }
 
-  insertBefore(node: ListNode<T>, element: T) {
-    const newNode = new ListNode(element, node.prev, node);
+  insertBefore(node: ListNode<T>, element: T): ListNode<T> {
+    const newNode = new ListNode(element);
+    this.insertNodeBefore(node, newNode);
+    return newNode;
+  }
+
+  insertNodeBefore(node: ListNode<T>, newNode: ListNode<T>) {
+    newNode.prev = node.prev;
+    newNode.next = node;
     if (node.prev === null) {
       this.head = newNode;
     } else {
@@ -192,5 +238,18 @@ export class LinkedList<T> implements Iterable<T> {
 
   find(mapFn: MapFunction<T, boolean>): T | null {
     return this.nodeSearch(mapFn)?.value ?? null;
+  }
+
+  appendList(list: LinkedList<T>) {
+    if (list.head === null) return;
+
+    if (this.tail === null) {
+      this.head = list.head;
+      this.tail = list.tail;
+    } else {
+      this.tail.next = list.head;
+      list.head.prev = this.tail;
+    }
+    this._length += list.length;
   }
 }

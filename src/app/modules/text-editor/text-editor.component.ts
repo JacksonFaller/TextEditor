@@ -12,6 +12,7 @@ export class TextEditorComponent implements OnInit {
 
   SymbolType = SymbolType;
   fontSize = 14.55;
+  rowHeight = 17;
   state: EditorState = new EditorState();
 
   ngOnInit(): void {}
@@ -23,10 +24,12 @@ export class TextEditorComponent implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   textInput(e: Event) {
-    if (this.state.focused) {
-      this.state.keyDown(e as KeyboardEvent);
-    }
-    return !this.state.focused;
+    return this.state.focused ? this.state.keyDown(e as KeyboardEvent) : true;
+  }
+
+  paste(e: Event) {
+    this.state.paste(e as ClipboardEvent);
+    return false;
   }
 
   getClass(type: SymbolType): string {

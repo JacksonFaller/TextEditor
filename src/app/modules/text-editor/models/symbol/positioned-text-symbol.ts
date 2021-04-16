@@ -21,6 +21,10 @@ export class PositionedTextSymbol {
     return this._row;
   }
 
+  set row(value: number) {
+    this._row = value;
+  }
+
   get type(): SymbolType {
     return this.symbol.type;
   }
@@ -29,11 +33,15 @@ export class PositionedTextSymbol {
     return this._start;
   }
 
+  set start(value: number) {
+    this._start = value;
+  }
+
   get end(): number {
     return this.start + this.length;
   }
 
-  static findPosition(symbol: TextSymbol, row: Iterable<TextSymbol>): number {
+  static findPosition(row: Iterable<TextSymbol>, symbol: TextSymbol): number {
     let position = 0;
     for (let el of row) {
       if (el == symbol) break;
@@ -46,7 +54,7 @@ export class PositionedTextSymbol {
     row: Iterable<ListNode<TextSymbol>>,
     colInd: number,
     rowInd: number,
-  ): PositionedTextSymbol {
+  ): PositionedTextSymbol | null {
     let position = 0;
     for (let el of row) {
       if (position + el.value.length > colInd) {
@@ -54,7 +62,31 @@ export class PositionedTextSymbol {
       }
       position += el.value.length;
     }
-    throw `Couldn't find node at position ${colInd}`;
+    return null;
+  }
+
+  static fromSymbolAtPositionOrLast(
+    row: Iterable<ListNode<TextSymbol>>,
+    colInd: number,
+    rowInd: number,
+  ): { isLast: boolean; symbol: PositionedTextSymbol } {
+    let position = 0;
+    let el;
+    for (el of row) {
+      if (position + el.value.length > colInd) {
+        return { isLast: false, symbol: new PositionedTextSymbol(el, position, rowInd) };
+      }
+      position += el.value.length;
+    }
+    if (el === undefined) throw `Row is empty`;
+    return {
+      isLast: true,
+      symbol: new PositionedTextSymbol(el, position - el.value.length, rowInd),
+    };
+  }
+
+  static empty(start: number, row: number) {
+    return new PositionedTextSymbol(new ListNode(TextSymbol.empty), start, row);
   }
 
   getPrev(): PositionedTextSymbol | null {
@@ -71,5 +103,10 @@ export class PositionedTextSymbol {
     }
     let start = this._start + this.length;
     return new PositionedTextSymbol(this.node.next, start, this._row);
+  }
+
+  prepend(symbol: TextSymbol) {
+    this.symbol.prepend(symbol.text);
+    this._start -= symbol.length;
   }
 }

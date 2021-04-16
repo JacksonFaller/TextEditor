@@ -20,7 +20,6 @@ export class Cursor {
     const colInd = this.findColumnIndex(x - rect.left);
     this.position = new Position(colInd, rowInd);
     this.coord = this.getCoord(colInd, rowInd);
-    console.error(this.position);
   }
 
   moveToRow(rowInd: number, colInd: number) {

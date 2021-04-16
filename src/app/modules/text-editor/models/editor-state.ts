@@ -73,24 +73,44 @@ export class EditorState {
     return rowLength;
   }
 
-  keyDown(event: KeyboardEvent) {
-    console.error(event.key);
+  keyDown(event: KeyboardEvent): boolean {
     if (event.isComposing) {
-      return;
+      return false;
     }
-    this.textProcessor.processInput(event.key, this.curSymbolContainer);
+    return this.textProcessor.processInput(event.key, event.ctrlKey, this.curSymbolContainer);
+  }
+
+  paste(event: ClipboardEvent) {
+    if (event.clipboardData === null) return;
+    let text = event.clipboardData.getData('Text');
+    this.textProcessor.paste(text);
   }
 
   findSymbol(colInd: number, rowInd: number): PositionedTextSymbol {
     if (
       this.curSymbol.row == rowInd &&
       colInd >= this.curSymbol.start &&
-      colInd <= this.curSymbol.end
+      colInd < this.curSymbol.end
     ) {
       return this.curSymbol;
     }
 
-    return PositionedTextSymbol.fromSymbolAtPosition(this.rows[rowInd].iterator(), colInd, rowInd);
+    if (this.rows[rowInd].length === 0) {
+      return PositionedTextSymbol.empty(0, rowInd);
+    }
+
+    let result = PositionedTextSymbol.fromSymbolAtPositionOrLast(
+      this.rows[rowInd].iterator(),
+      colInd,
+      rowInd,
+    );
+    return result.symbol;
+  }
+
+  addEmpty(rowInd: number, start: number): PositionedTextSymbol {
+    const empty = PositionedTextSymbol.empty(start, rowInd);
+    this.rows[rowInd].appendNode(empty.node);
+    return empty;
   }
 
   testData() {

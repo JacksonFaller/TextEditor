@@ -3,5 +3,4 @@ export enum SymbolType {
   Tab,
   Keyword,
   Plain,
-  Empty,
 }

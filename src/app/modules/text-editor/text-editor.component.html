@@ -1,11 +1,16 @@
-<div class="container" [style.font-size.px]="fontSize">
+<div class="container" [style.font-size.px]="fontSize" (paste)="paste($event)">
   <div class="rowsNums">
-    <span *ngFor="let r of state.rows; let i = index">
+    <span *ngFor="let r of state.rows; let i = index" [ngStyle]="{ 'height.px': rowHeight }">
       {{ i + 1 }}
     </span>
   </div>
   <div class="text-container" (click)="state.click($event)">
-    <div class="row" *ngFor="let row of state.rows; let i = index" [attr.ind]="i">
+    <div
+      class="row"
+      *ngFor="let row of state.rows; let i = index"
+      [attr.ind]="i"
+      [ngStyle]="{ 'height.px': rowHeight }"
+    >
       <ng-container *ngFor="let symbol of row">
         <span [class]="[getClass(symbol.type), 'symbol']">{{ symbol.text }}</span>
       </ng-container>

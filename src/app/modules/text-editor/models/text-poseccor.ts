@@ -15,35 +15,68 @@ export class TextProcessor {
     ['Backspace', this.backspace],
     ['Tab', this.tab],
     ['Delete', this.delete],
+    ['Enter', this.enter],
   ]);
 
-  processInput(key: string, container: Container<PositionedTextSymbol>) {
+  processInput(key: string, ctrl: boolean, container: Container<PositionedTextSymbol>): boolean {
     const processor = this.keyProcessors.get(key);
     if (processor) {
       processor.apply(this, [container]);
+    } else if (ctrl) {
+      this.processCommand(key);
     } else if (key.length == 1) {
       container.value.symbol.insert(this.cursor.position.col, key);
       this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col + 1);
     }
+    return false;
+  }
+
+  processCommand(key: string): boolean {
+    switch (key) {
+      case 'c': {
+        document.execCommand('copy');
+        break;
+      }
+      case 'v': // processed separately
+        return true;
+      case 'a': {
+        const range = new Range();
+        //range.selectNodeContents(temp1, 0); temp1 is a textcontainer
+        document.getSelection()?.addRange(range);
+      }
+    }
+    return false;
   }
 
   arrowUp(container: Container<PositionedTextSymbol>) {
     if (this.cursor.position.row == 0) return;
-    let col = this.cursor.position.col;
-    const row = this.rows[this.cursor.position.row - 1];
-    if (row.last !== null) {
-      const rowLength =
-        PositionedTextSymbol.findPosition(row.last.value, row) + row.last.value.length;
-      col = Math.min(rowLength, col);
-    }
-    // need to check for column too
-    this.cursor.moveToRow(this.cursor.position.row - 1, col);
+    const newRow = this.cursor.position.row - 1;
+    this.moveToRow(container, newRow);
   }
 
   arrowDown(container: Container<PositionedTextSymbol>) {
     if (this.cursor.position.row == this.rows.length - 1) return;
-    // need to check for column too
-    this.cursor.moveToRow(this.cursor.position.row + 1, this.cursor.position.col);
+    const newRow = this.cursor.position.row + 1;
+    this.moveToRow(container, newRow);
+  }
+
+  moveToRow(container: Container<PositionedTextSymbol>, newRow: number) {
+    let newCol = this.cursor.position.col;
+    if (this.rows[newRow].length !== 0) {
+      const result = PositionedTextSymbol.fromSymbolAtPositionOrLast(
+        this.rows[newRow].iterator(),
+        this.cursor.position.col,
+        newRow,
+      );
+      if (result.isLast) {
+        newCol = result.symbol.end;
+      }
+      container.value = result.symbol;
+    } else {
+      newCol = 0;
+      container.value = PositionedTextSymbol.empty(0, newRow);
+    }
+    this.cursor.moveToRow(newRow, newCol);
   }
 
   arrowLeft(container: Container<PositionedTextSymbol>) {
@@ -60,7 +93,7 @@ export class TextProcessor {
         let position = 0;
         if (newRow.last !== null) {
           last = newRow.last;
-          position = PositionedTextSymbol.findPosition(last.value, newRow) + last.value.length;
+          position = PositionedTextSymbol.findPosition(newRow, last.value) + last.value.length;
         } else {
           last = new ListNode(TextSymbol.empty);
         }
@@ -96,10 +129,51 @@ export class TextProcessor {
   }
 
   backspace(container: Container<PositionedTextSymbol>) {
-    if (container.value.start <= this.cursor.position.col - 1) {
-      container.value.symbol.removeRange(this.cursor.position.col - 1, this.cursor.position.col);
-      this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col - 1);
+    let colInd = this.cursor.position.col - 1;
+    let rowInd = this.cursor.position.row;
+    const curSymbol = container.value;
+    if (curSymbol.start !== this.cursor.position.col) {
+      if (curSymbol.symbol.isTabOrWhitespace()) {
+        container.value = curSymbol.getPrev() ?? PositionedTextSymbol.empty(colInd, rowInd);
+      } else {
+        let start = this.cursor.position.col - curSymbol.start;
+        curSymbol.symbol.removeRange(start - 1, start);
+      }
+    } else {
+      let node = curSymbol.node.prev;
+      if (node === null) {
+        if (rowInd === 0) return;
+        rowInd--;
+        let prevRow = this.rows[rowInd];
+        if (prevRow.length === 0) {
+          this.rows.splice(rowInd, 1);
+          curSymbol.row--;
+          return;
+        }
+
+        prevRow.appendList(this.rows[rowInd + 1]);
+        this.rows.splice(rowInd + 1, 1);
+        node = curSymbol.node.prev;
+        curSymbol.start = PositionedTextSymbol.findPosition(prevRow, curSymbol.symbol);
+        colInd = curSymbol.start;
+        if (node !== null && node.value.isPlainOrKey()) {
+          curSymbol.prepend(node.value);
+          prevRow.remove(node);
+        }
+      } else if (node.value.isPlainOrKey()) {
+        node.value.removeRange(node.value.length - 1, node.value.length);
+        curSymbol.start--;
+      } else {
+        this.rows[rowInd].remove(node);
+        colInd = curSymbol.start - node.value.length;
+        curSymbol.start = colInd;
+        if (node.prev !== null && node.prev.value.isPlainOrKey()) {
+          curSymbol.prepend(node.prev.value);
+          this.rows[rowInd].remove(node.prev);
+        }
+      }
     }
+    this.cursor.moveToRow(rowInd, colInd);
   }
 
   delete(container: Container<PositionedTextSymbol>) {
@@ -119,4 +193,28 @@ export class TextProcessor {
 
     this.cursor.moveToRow(this.cursor.position.row, this.cursor.position.col + TextSymbol.tabWidth);
   }
+
+  enter(container: Container<PositionedTextSymbol>) {
+    const rowInd = this.cursor.position.row + 1;
+    const colInd = this.cursor.position.col;
+    let newRow: LinkedList<TextSymbol>;
+    const curSymbol = container.value;
+
+    if (colInd === curSymbol.end) {
+      newRow = new LinkedList<TextSymbol>();
+      container.value = PositionedTextSymbol.empty(0, rowInd);
+      newRow.appendNode(curSymbol.node);
+    } else {
+      newRow = this.rows[rowInd - 1].splitAfter(curSymbol.node);
+      let split = curSymbol.symbol.split(colInd - curSymbol.start);
+      curSymbol.node.value.text = split.before.text;
+      let head = newRow.prepend(split.after);
+      container.value = new PositionedTextSymbol(head, 0, rowInd);
+    }
+
+    this.rows.splice(rowInd, 0, newRow);
+    this.cursor.moveToRow(rowInd, 0);
+  }
+
+  paste(text: string) {}
 }
