@@ -11,6 +11,14 @@ export class Cursor {
   private symbolWidth = 8;
   private symbolHeight = 17;
 
+  get col(): number {
+    return this.position.col;
+  }
+
+  get row(): number {
+    return this.position.row;
+  }
+
   moveCursor(x: number, y: number, element: HTMLElement) {
     const rect = element.getBoundingClientRect();
     const rowInd = this.findRowIndexByAttribute(element);
@@ -25,6 +33,10 @@ export class Cursor {
   moveToRow(rowInd: number, colInd: number) {
     this.position = new Position(colInd, rowInd);
     this.coord = this.getCoord(colInd, rowInd);
+  }
+
+  moveToCol(colInd: number) {
+    this.moveToRow(this.position.row, colInd);
   }
 
   getCoord(colInd: number, rowInd: number): Coordinates {

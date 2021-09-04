@@ -1,16 +1,17 @@
-import { LinkedList } from 'src/app/modules/text-editor/models/linked-list/linked-list';
 import { PositionedTextSymbol } from 'src/app/modules/text-editor/models/symbol/positioned-text-symbol';
 import { SymbolType } from 'src/app/modules/text-editor/enums/symbol-type';
 import { TextSymbol } from 'src/app/modules/text-editor/models/symbol/text-symbol';
 import { Cursor } from './cursor';
 import { TextProcessor } from './text-poseccor';
 import { Container } from './container';
+import { Row } from './row';
 
 export class EditorState {
   private wasInside = false;
   private textProcessor;
 
-  rows: Array<LinkedList<TextSymbol>> = [];
+  focused = false;
+  rows: Array<Row> = [];
   cursor = new Cursor();
   curSymbolContainer: Container<PositionedTextSymbol>;
   get curSymbol() {
@@ -20,7 +21,6 @@ export class EditorState {
   set curSymbol(value: PositionedTextSymbol) {
     this.curSymbolContainer.value = value;
   }
-  focused = false;
 
   constructor() {
     this.textProcessor = new TextProcessor(this.cursor, this.rows);
@@ -96,27 +96,23 @@ export class EditorState {
     }
 
     if (this.rows[rowInd].length === 0) {
-      return PositionedTextSymbol.empty(0, rowInd);
+      return PositionedTextSymbol.lineEnd(0, this.rows[rowInd], rowInd);
     }
 
     let result = PositionedTextSymbol.fromSymbolAtPositionOrLast(
-      this.rows[rowInd].iterator(),
+      this.rows[rowInd].nodes(),
       colInd,
       rowInd,
     );
-    return result.symbol;
-  }
-
-  addEmpty(rowInd: number, start: number): PositionedTextSymbol {
-    const empty = PositionedTextSymbol.empty(start, rowInd);
-    this.rows[rowInd].appendNode(empty.node);
-    return empty;
+    return result.found
+      ? result.symbol
+      : PositionedTextSymbol.lineEnd(result.symbol.end, this.rows[rowInd], rowInd);
   }
 
   testData() {
     const str = 'Lorem ipsum dolor sit amet consectetur adipisicing elit';
     for (let i = 0; i < 4; i++) {
-      let list = new LinkedList<TextSymbol>();
+      let list = new Row();
       str.split(' ').forEach((x) => {
         list.append(new TextSymbol(SymbolType.Plain, x));
         list.append(TextSymbol.whitespace);

@@ -3,13 +3,6 @@ import { SymbolType } from '../../enums/symbol-type';
 export class TextSymbol {
   constructor(public type: SymbolType, public text: string) {}
 
-  public static tabWidth = 2;
-  public static tabAsSpaces = true;
-
-  get length(): number {
-    return this.text.length;
-  }
-
   static get whitespace(): TextSymbol {
     return new TextSymbol(SymbolType.Whitespace, ' ');
   }
@@ -18,8 +11,35 @@ export class TextSymbol {
     return new TextSymbol(SymbolType.Tab, this.tabAsSpaces ? ' '.repeat(this.tabWidth) : '\t');
   }
 
-  static get empty(): TextSymbol {
-    return new TextSymbol(SymbolType.Plain, '');
+  static get lineEnd(): TextSymbol {
+    return new TextSymbol(SymbolType.LineEnd, '');
+  }
+
+  static plain(text: string) {
+    return new TextSymbol(SymbolType.Plain, text);
+  }
+
+  public static tabWidth = 2;
+  public static tabAsSpaces = true;
+
+  get length(): number {
+    return this.text.length;
+  }
+
+  get isTabOrWhitespace() {
+    return this.type == SymbolType.Tab || this.type == SymbolType.Whitespace;
+  }
+
+  get isPlainOrKey(): boolean {
+    return this.type === SymbolType.Plain || this.type == SymbolType.Keyword;
+  }
+
+  get isSplittable(): boolean {
+    return !this.isTabOrWhitespace;
+  }
+
+  get isLineEnd(): boolean {
+    return this.type === SymbolType.LineEnd;
   }
 
   removeRange(start: number, end: number) {
@@ -44,11 +64,7 @@ export class TextSymbol {
     this.text = text + this.text;
   }
 
-  isTabOrWhitespace() {
-    return this.type == SymbolType.Tab || this.type == SymbolType.Whitespace;
-  }
-
-  isPlainOrKey(): boolean {
-    return this.type === SymbolType.Plain || this.type == SymbolType.Keyword;
+  append(text: string) {
+    this.text += text;
   }
 }

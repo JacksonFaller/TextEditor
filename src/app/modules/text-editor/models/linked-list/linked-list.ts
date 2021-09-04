@@ -4,9 +4,16 @@ type EqualityFunction<T> = (element1: T, element2: T) => boolean;
 type MapFunction<Tin, Tout> = (element: Tin, index: number, list: LinkedList<Tin>) => Tout;
 
 export class LinkedList<T> implements Iterable<T> {
-  private head: ListNode<T> | null = null;
-  private tail: ListNode<T> | null = null;
-  private _length = 0;
+  protected head: ListNode<T> | null = null;
+  private _tail: ListNode<T> | null = null;
+
+  protected get tail(): ListNode<T> | null {
+    return this._tail;
+  }
+  protected set tail(value: ListNode<T> | null) {
+    this._tail = value;
+  }
+  protected _length = 0;
 
   get length(): number {
     return this._length;
@@ -20,9 +27,9 @@ export class LinkedList<T> implements Iterable<T> {
     return this.tail;
   }
 
-  constructor(private equals: EqualityFunction<T> = LinkedList.equals) {}
+  constructor(protected equals: EqualityFunction<T> = LinkedList.equals) {}
 
-  private static equals<T>(element1: T, element2: T) {
+  protected static equals<T>(element1: T, element2: T) {
     return element1 === element2;
   }
 
@@ -34,7 +41,7 @@ export class LinkedList<T> implements Iterable<T> {
     }
   }
 
-  *iterator(): IterableIterator<ListNode<T>> {
+  *nodes(): IterableIterator<ListNode<T>> {
     let node = this.head;
     while (node !== null) {
       yield node;
@@ -42,7 +49,7 @@ export class LinkedList<T> implements Iterable<T> {
     }
   }
 
-  private nodeSearch(mapFn: MapFunction<T, boolean>): ListNode<T> | null {
+  protected nodeSearch(mapFn: MapFunction<T, boolean>): ListNode<T> | null {
     let node: ListNode<T> | null = this.head;
     let i = 0;
     while (node !== null) {

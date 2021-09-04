@@ -1,6 +1,7 @@
 import { ListNode } from '../linked-list/list-node';
 import { SymbolType } from '../../enums/symbol-type';
 import { TextSymbol } from './text-symbol';
+import { Row } from '../row';
 
 export class PositionedTextSymbol {
   constructor(public node: ListNode<TextSymbol>, private _start: number, private _row: number) {}
@@ -69,24 +70,24 @@ export class PositionedTextSymbol {
     row: Iterable<ListNode<TextSymbol>>,
     colInd: number,
     rowInd: number,
-  ): { isLast: boolean; symbol: PositionedTextSymbol } {
+  ): { found: boolean; symbol: PositionedTextSymbol } {
     let position = 0;
     let el;
     for (el of row) {
       if (position + el.value.length > colInd) {
-        return { isLast: false, symbol: new PositionedTextSymbol(el, position, rowInd) };
+        return { found: true, symbol: new PositionedTextSymbol(el, position, rowInd) };
       }
       position += el.value.length;
     }
     if (el === undefined) throw `Row is empty`;
     return {
-      isLast: true,
+      found: false,
       symbol: new PositionedTextSymbol(el, position - el.value.length, rowInd),
     };
   }
 
-  static empty(start: number, row: number) {
-    return new PositionedTextSymbol(new ListNode(TextSymbol.empty), start, row);
+  static lineEnd(start: number, row: Row, rowInd: number) {
+    return new PositionedTextSymbol(row.lineEnd, start, rowInd);
   }
 
   getPrev(): PositionedTextSymbol | null {
